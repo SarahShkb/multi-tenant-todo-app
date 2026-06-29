@@ -34,7 +34,7 @@ export default function Login() {
 
             const result = await login(data);
 
-            auth.login(result.access_token);
+            auth.login(result.accessToken);
 
             navigate("/");
 
