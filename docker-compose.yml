@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: multi-tenant-todo-app
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # backend:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   restart: always
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     DATABASE_HOST: postgres
+  #     DATABASE_PORT: 5432
+  #     DATABASE_USER: postgres
+  #     DATABASE_PASSWORD: postgres
+  #     DATABASE_NAME: multi-tenant-todo-app
+  #     JWT_SECRET: change-this-in-production ## <----- TODO
+  #     JWT_EXPIRES_IN: 7d
+  #     PORT: 3000
+  #   ports:
+  #     - '3000:3000'
+
+volumes:
+  postgres_data:

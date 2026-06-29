@@ -1,0 +1,8 @@
+node_modules
+dist
+build
+.env
+.turbo
+postgres_data
+*.local
+.DS_Store
