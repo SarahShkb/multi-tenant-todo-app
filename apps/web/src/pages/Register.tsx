@@ -1,6 +1,8 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toSlug } from "../utils/slug";
+
 
 import { useNavigate, Link } from "react-router-dom";
 
@@ -11,6 +13,11 @@ import { useAuthStore } from "../store/authStore";
 const schema = z.object({
 
     name: z.string().min(2),
+
+    organizationName: z
+        .string()
+        .min(2, "Organization name is required")
+        .max(50, "Organization name is too long"),
 
     email: z.string().email(),
 
@@ -38,23 +45,26 @@ export default function Register() {
         resolver: zodResolver(schema),
     });
 
-    async function onSubmit(data: FormData) {
+async function onSubmit(data: FormData) {
+    try {
 
-        try {
+        const result = await registerUser({
+            name: data.name,
+            email: data.email,
+            password: data.password,
+            tenantSlug: toSlug(data.organizationName),
+        });
 
-            const result = await registerUser(data);
+        auth.login(result.access_token);
 
-            auth.login(result.access_token);
+        navigate("/");
 
-            navigate("/");
+    } catch {
 
-        } catch {
-
-            alert("Registration failed");
-
-        }
+        alert("Registration failed");
 
     }
+}
 
     return (
 
@@ -106,6 +116,16 @@ export default function Register() {
 
                     {errors.password?.message}
 
+                </p>
+
+                <input
+                    {...register("organizationName")}
+                    placeholder="Organization name"
+                    className="mb-2 w-full rounded border p-2"
+                />
+
+                <p className="text-red-500">
+                    {errors.organizationName?.message}
                 </p>
 
                 <button
