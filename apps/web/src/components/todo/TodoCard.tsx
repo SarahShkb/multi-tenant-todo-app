@@ -1,7 +1,10 @@
 import type { Todo } from "../../types/todo";
+import type { User } from "../../types/user";
 
 interface Props {
     todo: Todo;
+
+    assignee?: User;
 
     onEdit(): void;
 
@@ -10,6 +13,7 @@ interface Props {
 
 export default function TodoCard({
     todo,
+    assignee,
     onEdit,
     onDelete
 }: Props) {
@@ -29,12 +33,9 @@ export default function TodoCard({
                     {todo.description}
                 </p>
             )}
-
-            {todo.assignee && (
-                <p className="mt-3 text-xs text-gray-400">
-
-                    Assigned to {todo.assignee}
-
+            {assignee && (
+                <p className="mt-2 text-sm text-gray-500">
+                    Assigned to {assignee.name}
                 </p>
             )}
             <div className="mt-4 flex justify-end gap-2">

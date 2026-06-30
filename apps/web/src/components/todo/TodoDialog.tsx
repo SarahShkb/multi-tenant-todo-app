@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useUsers } from "../../hooks/useUsers";
 
 import type {
     Todo,
@@ -19,7 +20,7 @@ const schema = z.object({
         "done",
     ]),
 
-    assignee: z.string().optional(),
+    assigneeId: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -54,9 +55,11 @@ export default function TodoDialog({
             title: "",
             description: "",
             status: "todo",
-            assignee: "",
+            assigneeId: "",
         },
     });
+
+    const usersQuery = useUsers();
 
     useEffect(() => {
 
@@ -66,7 +69,7 @@ export default function TodoDialog({
                 title: todo.title,
                 description: todo.description ?? "",
                 status: todo.status,
-                assignee: todo.assignee ?? "",
+                assigneeId: todo.assigneeId ?? "",
             });
 
         } else {
@@ -75,7 +78,7 @@ export default function TodoDialog({
                 title: "",
                 description: "",
                 status: "todo",
-                assignee: "",
+                assigneeId: "",
             });
 
         }
@@ -162,13 +165,30 @@ export default function TodoDialog({
 
                     </div>
 
-                    <div className="mb-6">
+                    <div className="mb-4">
 
-                        <input
-                            {...register("assignee")}
-                            placeholder="Assignee"
+                        <label className="mb-1 block text-sm font-medium">
+                            Assignee
+                        </label>
+
+                        <select
+                            {...register("assigneeId")}
                             className="w-full rounded border p-2"
-                        />
+                        >
+                            <option value="">
+                                Unassigned
+                            </option>
+
+                            {usersQuery.data?.map((user) => (
+                                <option
+                                    key={user.id}
+                                    value={user.id}
+                                >
+                                    {user.name}
+                                </option>
+                            ))}
+
+                        </select>
 
                     </div>
 

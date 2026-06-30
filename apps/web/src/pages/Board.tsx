@@ -25,10 +25,14 @@ import type{
     CreateTodoDto,
     UpdateTodoDto,
 } from "../types/todo";
+import { useUsers } from "../hooks/useUsers";
 
 export default function Board() {
 
     const { id } = useParams();
+
+    const usersQuery = useUsers();
+    const users = usersQuery.data ?? [];
 
     const queryClient = useQueryClient();
 
@@ -212,6 +216,7 @@ export default function Board() {
                     <TodoColumn
                         title="Todo"
                         status="todo"
+                        users={users}
                         todos={todos}
                         onEdit={(todo) => {
 
@@ -231,6 +236,7 @@ export default function Board() {
                         title="In Progress"
                         status="in-progress"
                         todos={todos}
+                        users={users}
                         onEdit={(todo) => {
 
                             setEditingTodo(todo);
@@ -249,6 +255,7 @@ export default function Board() {
                         title="Done"
                         status="done"
                         todos={todos}
+                        users={users}
                         onEdit={(todo) => {
 
                             setEditingTodo(todo);

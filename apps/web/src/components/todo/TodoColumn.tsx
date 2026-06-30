@@ -1,5 +1,6 @@
 import TodoCard from "./TodoCard";
 import type { Todo, TodoStatus } from "../../types/todo";
+import type { User } from "../../types/user";
 
 interface Props {
 
@@ -9,6 +10,8 @@ interface Props {
     status: TodoStatus;
 
     todos: Todo[];
+
+    users: User[];
 
     onEdit(todo: Todo): void;
 
@@ -20,6 +23,7 @@ export default function TodoColumn({
     title,
     status,
     todos,
+    users,
     onEdit,
     onDelete
 }: Props) {
@@ -42,6 +46,7 @@ export default function TodoColumn({
 
                     <TodoCard
                         key={todo.id}
+                        assignee={users.find(u => u.id === todo.assigneeId)}
                         todo={todo}
                         onEdit={() => onEdit(todo)}
                         onDelete={() => onDelete(todo)}

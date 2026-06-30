@@ -9,9 +9,6 @@ export interface Todo {
     description?: string;
     status: TodoStatus;
     assigneeId?: string;
-    boardId: string;
-    createdAt: string;
-    updatedAt: string;
 }
 
 export interface CreateTodoDto {
