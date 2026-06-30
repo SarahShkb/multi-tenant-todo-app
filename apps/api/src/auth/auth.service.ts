@@ -2,7 +2,6 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
-  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,7 +14,12 @@ import {
   UserTenant,
   MembershipRole,
 } from '../tenants/entities/user-tenant.entity';
-import { SignupDto, LoginDto, SwitchTenantDto } from './dto/auth.dto';
+import {
+  SignupDto,
+  LoginDto,
+  SelectTenantDto,
+  SwitchTenantDto,
+} from './dto/auth.dto';
 import { JwtPayload } from '../common/strategies/jwt.strategy';
 
 @Injectable()
@@ -65,8 +69,8 @@ export class AuthService {
     });
     await this.userRepo.save(user);
 
-    // Create the membership row. First member of a brand-new tenant
-    // becomes admin; anyone joining an existing tenant becomes a member.
+    // First member of a brand-new tenant becomes admin;
+    // anyone joining an existing tenant becomes a regular member.
     const membership = this.membershipRepo.create({
       userId: user.id,
       tenantId: tenant.id,
@@ -74,67 +78,73 @@ export class AuthService {
     });
     await this.membershipRepo.save(membership);
 
+    // A brand-new user only ever has exactly one tenant, so we can
+    // safely issue a scoped JWT immediately — no selection step needed.
     return this.buildTokenResponse(user, tenant.id);
   }
 
+  /**
+   * STEP 1 of login.
+   * Verifies email + password only. Does NOT issue a JWT, since we don't
+   * yet know which tenant context the session should run in.
+   * Returns the list of tenants this user can log into.
+   */
   async login(dto: LoginDto) {
-    const user = await this.userRepo.findOne({ where: { email: dto.email } });
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const passwordMatch = await bcrypt.compare(dto.password, user.password);
-    if (!passwordMatch) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    const user = await this.validateCredentials(dto.email, dto.password);
 
     const memberships = await this.membershipRepo.find({
       where: { userId: user.id },
       relations: ['tenant'],
+      order: { createdAt: 'ASC' },
     });
 
     if (memberships.length === 0) {
       throw new UnauthorizedException('User has no tenant memberships');
     }
 
-    let activeTenantId: string;
-
-    if (dto.tenantSlug) {
-      // User specified which org to log into — verify they're a member.
-      const match = memberships.find((m) => m.tenant.slug === dto.tenantSlug);
-      if (!match) {
-        throw new UnauthorizedException('Not a member of this tenant');
-      }
-      activeTenantId = match.tenantId;
-    } else if (memberships.length === 1) {
-      // Only one tenant — no ambiguity, pick it automatically.
-      activeTenantId = memberships[0].tenantId;
-    } else {
-      // Multiple tenants and none specified — caller must choose.
-      throw new BadRequestException({
-        message: 'User belongs to multiple tenants — specify tenantSlug',
-        tenants: memberships.map((m) => ({
-          slug: m.tenant.slug,
-          name: m.tenant.name,
-        })),
-      });
-    }
-
-    return this.buildTokenResponse(user, activeTenantId);
+    return {
+      tenants: memberships.map((m) => ({
+        id: m.tenant.id,
+        name: m.tenant.name,
+        slug: m.tenant.slug,
+        role: m.role,
+      })),
+    };
   }
 
-  // Switch the active tenant for an already-authenticated user,
-  // without requiring them to log in again with a password.
-  async switchTenant(userId: string, dto: SwitchTenantDto) {
-    const tenant = await this.tenantRepo.findOne({
-      where: { slug: dto.tenantSlug },
-    });
-    if (!tenant) {
-      throw new NotFoundException('Tenant not found');
-    }
+  /**
+   * STEP 2 of login.
+   * Frontend calls this after the user picks one of the tenants
+   * returned by login(). Re-verifies credentials + membership,
+   * then issues the actual JWT scoped to that tenant.
+   *
+   * We re-check the password here (rather than trusting a short-lived
+   * "pre-auth" token from step 1) to keep the flow stateless and simple —
+   * no extra token type to design, sign, or expire. The tradeoff is the
+   * frontend must hold the password in memory between the two calls
+   * (e.g. in a form's local state), not persist it anywhere.
+   */
+  async selectTenant(dto: SelectTenantDto) {
+    const user = await this.validateCredentials(dto.email, dto.password);
 
     const membership = await this.membershipRepo.findOne({
-      where: { userId, tenantId: tenant.id },
+      where: { userId: user.id, tenantId: dto.tenantId },
+    });
+
+    if (!membership) {
+      throw new UnauthorizedException('Not a member of this tenant');
+    }
+
+    return this.buildTokenResponse(user, dto.tenantId);
+  }
+
+  /**
+   * Switch the active tenant for an ALREADY-authenticated user
+   * (has a valid JWT), without re-entering a password.
+   */
+  async switchTenant(userId: string, dto: SwitchTenantDto) {
+    const membership = await this.membershipRepo.findOne({
+      where: { userId, tenantId: dto.tenantId },
     });
     if (!membership) {
       throw new UnauthorizedException('Not a member of this tenant');
@@ -145,7 +155,24 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    return this.buildTokenResponse(user, tenant.id);
+    return this.buildTokenResponse(user, dto.tenantId);
+  }
+
+  private async validateCredentials(
+    email: string,
+    password: string,
+  ): Promise<User> {
+    const user = await this.userRepo.findOne({ where: { email } });
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    return user;
   }
 
   private buildTokenResponse(user: User, activeTenantId: string) {
