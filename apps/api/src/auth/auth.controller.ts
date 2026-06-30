@@ -8,7 +8,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignupDto, LoginDto, SwitchTenantDto } from './dto/auth.dto';
+import { SignupDto, LoginDto, SwitchTenantDto, SelectTenantDto } from './dto/auth.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../common/strategies/jwt.strategy';
@@ -40,5 +40,11 @@ export class AuthController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.authService.switchTenant(user.id, dto);
+  }
+
+  @Post("select-tenant")
+  @HttpCode(HttpStatus.OK)
+  selectTenant(@Body() dto: SelectTenantDto) {
+    return this.authService.selectTenant(dto);
   }
 }

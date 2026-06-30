@@ -6,6 +6,10 @@ interface AuthState {
 
     isAuthenticated: boolean;
 
+    setTenantName: (name: string) => void;
+
+    getTenantName: () => string | null;
+
     login: (token: string) => void;
 
     register: (token: string) => void;
@@ -19,6 +23,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     token: localStorage.getItem("token"),
 
     isAuthenticated: !!localStorage.getItem("token"),
+
+    setTenantName: (name) => {
+
+        localStorage.setItem("tenantName", name);
+
+    },
+
+    getTenantName: () => {
+
+        return localStorage.getItem("tenantName");
+
+    },
 
     login: (token) => {
 

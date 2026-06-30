@@ -5,6 +5,8 @@ export default function Navbar() {
 
     const navigate = useNavigate();
 
+    const tenantName = useAuthStore((state) => state.getTenantName());
+
     const logout = useAuthStore((state) => state.logout);
 
     function handleLogout() {
@@ -21,7 +23,7 @@ export default function Navbar() {
 
             <h2 className="text-xl font-bold">
 
-                Collaborative Todo
+                Tenant: {tenantName || "None"}
 
             </h2>
 

@@ -4,8 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useNavigate, Link } from "react-router-dom";
 
-import { login } from "../api/auth";
+import { login, selectTenant, type TenantInfo } from "../api/auth";
 import { useAuthStore } from "../store/authStore";
+import { useState } from "react";
+import TenantSelectionModal from "../components/TenantSelectionModal";
 
 const schema = z.object({
     email: z.string().email(),
@@ -15,6 +17,15 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function Login() {
+
+    const [showTenantModal, setShowTenantModal] =
+    useState(false);
+
+    const [tenants, setTenants] =
+        useState<TenantInfo[]>([]);
+
+    const [loginData, setLoginData] =
+        useState<FormData | null>(null);
 
     const navigate = useNavigate();
 
@@ -34,9 +45,32 @@ export default function Login() {
 
             const result = await login(data);
 
-            auth.login(result.accessToken);
+            if (result.tenants.length === 1) {
 
-            navigate("/");
+                const authResult =
+                    await selectTenant({
+
+                        email: data.email,
+
+                        password: data.password,
+
+                        tenantId: result.tenants[0].id,
+
+                    });
+
+                auth.setTenantName(result.tenants[0].name);
+                auth.login(authResult.accessToken);
+
+                navigate("/");
+
+                return;
+            }
+
+            setLoginData(data);
+
+            setTenants(result.tenants);
+
+            setShowTenantModal(true);
 
         } catch {
 
@@ -105,6 +139,25 @@ export default function Login() {
                 </Link>
 
             </form>
+            <TenantSelectionModal
+
+                open={showTenantModal}
+
+                tenants={tenants}
+
+                email={loginData?.email ?? ""}
+
+                password={loginData?.password ?? ""}
+
+                onSuccess={(token) => {
+
+                    auth.login(token);
+
+                    navigate("/");
+
+                }}
+
+            />
 
         </div>
 
