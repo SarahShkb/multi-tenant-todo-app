@@ -91,7 +91,7 @@ export default function TodoDialog({
 
         <div className="fixed inset-0 flex items-center justify-center bg-black/50">
 
-            <div className="w-full max-w-lg rounded-lg bg-white p-6">
+            <div className="w-full max-w-lg rounded-lg bg-background p-6 border shadow-lg">
 
                 <h2 className="mb-6 text-2xl font-bold">
 

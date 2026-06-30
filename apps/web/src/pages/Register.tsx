@@ -55,7 +55,7 @@ async function onSubmit(data: FormData) {
             tenantSlug: toSlug(data.organizationName),
         });
 
-        console.log("Registration successful:", result);
+        auth.setTenantName(data.organizationName);
 
         auth.login(result.accessToken);
 
