@@ -1,5 +1,13 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
+import { Button } from "../components/ui/button";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "../components/ui/navigation-menu";
 
 export default function Navbar() {
 
@@ -19,24 +27,24 @@ export default function Navbar() {
 
     return (
 
-        <nav className="flex items-center justify-between border-b p-4">
+        <nav className="flex items-center justify-between border-b bg-background px-6 py-4">
+            
+            {/* Left: Branding / Tenant Info */}
+            <div className="flex items-center gap-8">
+                <h2 className="text-xl font-semibold tracking-tight ">
+                Tenant: <span className="text-muted-foreground">{tenantName || "None"}</span>
+                </h2>
+            </div>
 
-            <h2 className="text-xl font-bold">
-
-                Tenant: {tenantName || "None"}
-
-            </h2>
-
-            <button
+            {/* Right: Actions */}
+            <Button 
+                variant="destructive" 
                 onClick={handleLogout}
-                className="rounded bg-red-500 px-4 py-2 text-white"
             >
-
                 Logout
-
-            </button>
-
-        </nav>
+            </Button>
+            
+            </nav>
 
     );
 

@@ -10,6 +10,8 @@ import "./index.css";
 
 const queryClient = new QueryClient();
 
+document.documentElement.classList.add("dark");
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
 
