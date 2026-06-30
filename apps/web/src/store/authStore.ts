@@ -1,21 +1,26 @@
 import { create } from "zustand";
+import type { TenantInfo } from "../api/auth";
 
 interface AuthState {
-
     token: string | null;
-
     isAuthenticated: boolean;
 
-    setTenantName: (name: string) => void;
+    // Full list of tenants this user belongs to,
+    // populated after login and kept in sync after switching.
+    tenants: TenantInfo[];
 
-    getTenantName: () => string | null;
+    // The currently active tenant (scoped in the JWT).
+    activeTenant: TenantInfo | null;
 
-    login: (token: string) => void;
+    // Called after step 2 of login (selectTenant) or after switchTenant.
+    // Stores everything needed for the navbar and switcher in one go.
+    setSession: (token: string, activeTenant: TenantInfo, tenants: TenantInfo[]) => void;
 
-    register: (token: string) => void;
+    // Called when the user switches tenant mid-session.
+    // Only the token and activeTenant change — the full tenants list stays the same.
+    switchTenant: (token: string, tenant: TenantInfo) => void;
 
     logout: () => void;
-
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -24,48 +29,40 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     isAuthenticated: !!localStorage.getItem("token"),
 
-    setTenantName: (name) => {
+    tenants: (() => {
+        try {
+            return JSON.parse(localStorage.getItem("tenants") ?? "[]");
+        } catch {
+            return [];
+        }
+    })(),
 
-        localStorage.setItem("tenantName", name);
+    activeTenant: (() => {
+        try {
+            return JSON.parse(localStorage.getItem("activeTenant") ?? "null");
+        } catch {
+            return null;
+        }
+    })(),
 
-    },
-
-    getTenantName: () => {
-
-        return localStorage.getItem("tenantName");
-
-    },
-
-    login: (token) => {
-
+    setSession: (token, activeTenant, tenants) => {
         localStorage.setItem("token", token);
-
-        set({
-            token,
-            isAuthenticated: true,
-        });
-
+        localStorage.setItem("activeTenant", JSON.stringify(activeTenant));
+        localStorage.setItem("tenants", JSON.stringify(tenants));
+        set({ token, isAuthenticated: true, activeTenant, tenants });
     },
-    register: (token: string) => {
 
+    switchTenant: (token, tenant) => {
         localStorage.setItem("token", token);
-
-        set({
-            token,
-            isAuthenticated: true,
-        });
-
+        localStorage.setItem("activeTenant", JSON.stringify(tenant));
+        // tenants list doesn't change — user's memberships didn't change
+        set({ token, activeTenant: tenant });
     },
 
     logout: () => {
-
         localStorage.removeItem("token");
-
-        set({
-            token: null,
-            isAuthenticated: false,
-        });
-
+        localStorage.removeItem("activeTenant");
+        localStorage.removeItem("tenants");
+        set({ token: null, isAuthenticated: false, activeTenant: null, tenants: [] });
     },
-
 }));
