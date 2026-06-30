@@ -10,6 +10,13 @@ export async function getBoards(): Promise<Board[]> {
     return data;
 }
 
+export async function getBoard(
+    id: string,
+): Promise<Board> {
+    const { data } = await api.get(`/boards/${id}`);
+    return data;
+}
+
 export async function createBoard(
     dto: CreateBoardDto,
 ): Promise<Board> {

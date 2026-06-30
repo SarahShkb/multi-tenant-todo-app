@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { BoardsModule } from './boards/board.module';
 import { TodosModule } from './todos/todo.module';
 import { User } from './users/entities/user.entity';
+import { UsersModule } from './users/user.module';
 import { Tenant } from './tenants/entities/tenant.entity';
 import { Board } from './boards/entities/board.entity';
 import { Todo } from './todos/entities/todo.entity';
@@ -28,6 +29,7 @@ import { Todo } from './todos/entities/todo.entity';
     AuthModule,
     BoardsModule,
     TodosModule,
+    UsersModule,
   ],
   providers: [
     // Automatically strip @Exclude() fields (like password) from responses
