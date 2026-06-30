@@ -1,6 +1,17 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignupDto, LoginDto } from './dto/auth.dto';
+import { SignupDto, LoginDto, SwitchTenantDto } from './dto/auth.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../common/strategies/jwt.strategy';
 
 @Controller('auth')
 export class AuthController {
@@ -17,5 +28,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  // POST /auth/switch-tenant — requires an existing valid token.
+  // Returns a NEW token scoped to the requested tenant.
+  @UseGuards(JwtAuthGuard)
+  @Post('switch-tenant')
+  @HttpCode(HttpStatus.OK)
+  switchTenant(
+    @Body() dto: SwitchTenantDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.authService.switchTenant(user.id, dto);
   }
 }

@@ -6,17 +6,14 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
 import { Board } from '../../boards/entities/board.entity';
+import { UserTenant } from './user-tenant.entity';
 
 /**
  * A Tenant represents an organization (e.g. "Acme Corp").
  * All data (boards, todos) is scoped to a tenant.
- * Users from Tenant A can NEVER see data from Tenant B.
- *
- * This is "row-level" multi-tenancy: every table that holds
- * business data has a tenantId foreign key, and every query
- * filters by that column.
+ * Users from Tenant A can NEVER access data from Tenant B unless
+ * they also have a membership row in that tenant.
  */
 @Entity('tenants')
 export class Tenant {
@@ -26,7 +23,6 @@ export class Tenant {
   @Column({ unique: true })
   name: string;
 
-  // slug is used in invite links, e.g. /join/acme-corp
   @Column({ unique: true })
   slug: string;
 
@@ -36,8 +32,8 @@ export class Tenant {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => User, (user) => user.tenant)
-  users: User[];
+  @OneToMany(() => UserTenant, (membership) => membership.tenant)
+  memberships: UserTenant[];
 
   @OneToMany(() => Board, (board) => board.tenant)
   boards: Board[];

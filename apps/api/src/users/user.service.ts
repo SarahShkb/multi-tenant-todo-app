@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
+import { UserTenant } from '../tenants/entities/user-tenant.entity';
 import { UpdateUserDto } from './dto/user.dto';
 
 @Injectable()
@@ -14,28 +15,37 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+
+    @InjectRepository(UserTenant)
+    private readonly membershipRepo: Repository<UserTenant>,
   ) {}
 
-  // List all users in the CURRENT user's tenant only.
-  findAll(tenantId: string): Promise<User[]> {
-    return this.userRepo.find({
+  // List all users who have a membership in the given tenant.
+  // tenantId always comes from the caller's active session, never
+  // from client input — so this can't be used to enumerate other orgs.
+  async findAll(tenantId: string): Promise<User[]> {
+    const memberships = await this.membershipRepo.find({
       where: { tenantId },
+      relations: ['user'],
       order: { createdAt: 'ASC' },
     });
+
+    return memberships.map((m) => m.user);
   }
 
   async findOne(id: string, tenantId: string): Promise<User> {
-    const user = await this.userRepo.findOne({
-      where: { id, tenantId }, // tenantId guard — same pattern as boards/todos
+    const membership = await this.membershipRepo.findOne({
+      where: { userId: id, tenantId },
+      relations: ['user'],
     });
 
-    if (!user) {
-      // 404 rather than 403, so we don't reveal that a user exists
-      // in a different tenant.
+    if (!membership) {
+      // 404 rather than 403 — don't reveal that a user exists
+      // in a tenant the caller isn't part of.
       throw new NotFoundException('User not found');
     }
 
-    return user;
+    return membership.user;
   }
 
   async update(
@@ -43,6 +53,7 @@ export class UsersService {
     dto: UpdateUserDto,
     tenantId: string,
   ): Promise<User> {
+    // findOne already enforces that `id` is a member of `tenantId`
     const user = await this.findOne(id, tenantId);
 
     if (dto.email && dto.email !== user.email) {
@@ -66,8 +77,26 @@ export class UsersService {
     return this.userRepo.save(user);
   }
 
+  // Removes the user's MEMBERSHIP in this tenant, not the user account
+  // itself — since the same user may belong to other tenants too.
+  // If this was their last membership, we also delete the user account.
   async remove(id: string, tenantId: string): Promise<void> {
-    const user = await this.findOne(id, tenantId);
-    await this.userRepo.remove(user);
+    const membership = await this.membershipRepo.findOne({
+      where: { userId: id, tenantId },
+    });
+
+    if (!membership) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.membershipRepo.remove(membership);
+
+    const remaining = await this.membershipRepo.count({
+      where: { userId: id },
+    });
+
+    if (remaining === 0) {
+      await this.userRepo.delete(id);
+    }
   }
 }

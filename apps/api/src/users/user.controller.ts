@@ -13,7 +13,7 @@ import { UsersService } from './user.service';
 import { UpdateUserDto } from './dto/user.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { User } from './entities/user.entity';
+import type { AuthenticatedUser } from '../common/strategies/jwt.strategy';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -22,26 +22,30 @@ export class UsersController {
 
   // GET /users — list all users in the current tenant
   @Get()
-  findAll(@CurrentUser() user: User) {
+  findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.usersService.findAll(user.tenantId);
   }
 
   // GET /users/me — convenience route for "my own profile"
   // Defined BEFORE /users/:id so "me" isn't treated as an id.
+  // NOTE: req.user is a plain spread object ({ ...User, tenantId }),
+  // not a class instance, so @Exclude() on password won't apply via
+  // ClassSerializerInterceptor here. Strip it manually.
   @Get('me')
-  findMe(@CurrentUser() user: User) {
-    return user;
+  findMe(@CurrentUser() user: AuthenticatedUser) {
+    const { password, ...safeUser } = user;
+    return safeUser;
   }
 
   // GET /users/:id
   @Get(':id')
-  findOne(@Param('id') id: string, @CurrentUser() user: User) {
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.usersService.findOne(id, user.tenantId);
   }
 
   // PATCH /users/me — update your own profile
   @Patch('me')
-  updateMe(@Body() dto: UpdateUserDto, @CurrentUser() user: User) {
+  updateMe(@Body() dto: UpdateUserDto, @CurrentUser() user: AuthenticatedUser) {
     return this.usersService.update(user.id, dto, user.tenantId);
   }
 
@@ -53,7 +57,7 @@ export class UsersController {
   update(
     @Param('id') id: string,
     @Body() dto: UpdateUserDto,
-    @CurrentUser() user: User,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.usersService.update(id, dto, user.tenantId);
   }
@@ -61,7 +65,7 @@ export class UsersController {
   // DELETE /users/:id
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string, @CurrentUser() user: User) {
+  remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.usersService.remove(id, user.tenantId);
   }
 }

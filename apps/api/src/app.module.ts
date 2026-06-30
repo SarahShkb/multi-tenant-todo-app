@@ -5,9 +5,10 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { BoardsModule } from './boards/board.module';
 import { TodosModule } from './todos/todo.module';
-import { User } from './users/entities/user.entity';
 import { UsersModule } from './users/user.module';
+import { User } from './users/entities/user.entity';
 import { Tenant } from './tenants/entities/tenant.entity';
+import { UserTenant } from './tenants/entities/user-tenant.entity';
 import { Board } from './boards/entities/board.entity';
 import { Todo } from './todos/entities/todo.entity';
 
@@ -21,7 +22,7 @@ import { Todo } from './todos/entities/todo.entity';
       username: process.env.DATABASE_USER || 'postgres',
       password: process.env.DATABASE_PASSWORD || 'postgres',
       database: process.env.DATABASE_NAME || 'multi-tenant-todo-app',
-      entities: [User, Tenant, Board, Todo],
+      entities: [User, Tenant, UserTenant, Board, Todo],
       // synchronize: true auto-creates tables from entities.
       // Fine for dev — use migrations in production.
       synchronize: true,

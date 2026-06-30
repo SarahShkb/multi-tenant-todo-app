@@ -7,10 +7,11 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from '../common/strategies/jwt.strategy';
 import { User } from '../users/entities/user.entity';
 import { Tenant } from '../tenants/entities/tenant.entity';
-
+import { UserTenant } from '../tenants/entities/user-tenant.entity';
+ 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Tenant]),
+    TypeOrmModule.forFeature([User, Tenant, UserTenant]),
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'change-me',

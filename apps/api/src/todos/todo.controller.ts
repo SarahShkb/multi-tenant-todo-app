@@ -14,7 +14,7 @@ import { TodosService } from './todo.service';
 import { CreateTodoDto, UpdateTodoDto } from './dto/todo.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { User } from '../users/entities/user.entity';
+import type { AuthenticatedUser } from '../common/strategies/jwt.strategy';
 
 // Routes are nested under boards: /boards/:boardId/todos
 @UseGuards(JwtAuthGuard)
@@ -24,13 +24,16 @@ export class TodosController {
 
   // GET /boards/:boardId/todos
   @Get()
-  findAll(@Param('boardId') boardId: string, @CurrentUser() user: User) {
+  findAll(
+    @Param('boardId') boardId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.todosService.findAll(boardId, user.tenantId);
   }
 
   // GET /boards/:boardId/todos/:id
   @Get(':id')
-  findOne(@Param('id') id: string, @CurrentUser() user: User) {
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.todosService.findOne(id, user.tenantId);
   }
 
@@ -39,7 +42,7 @@ export class TodosController {
   create(
     @Param('boardId') boardId: string,
     @Body() dto: CreateTodoDto,
-    @CurrentUser() user: User,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.todosService.create(boardId, dto, user.tenantId);
   }
@@ -49,7 +52,7 @@ export class TodosController {
   update(
     @Param('id') id: string,
     @Body() dto: UpdateTodoDto,
-    @CurrentUser() user: User,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.todosService.update(id, dto, user.tenantId);
   }
@@ -57,7 +60,7 @@ export class TodosController {
   // DELETE /boards/:boardId/todos/:id
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string, @CurrentUser() user: User) {
+  remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.todosService.remove(id, user.tenantId);
   }
 }

@@ -43,7 +43,7 @@ export class TodosGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // Token is passed as a query param on connect
       const token =
         client.handshake.auth?.token ||
-        (client.handshake.query?.token as string);
+        client.handshake.query?.token as string;
 
       if (!token) {
         this.logger.warn(`Client ${client.id} connected without token`);
@@ -55,12 +55,13 @@ export class TodosGateway implements OnGatewayConnection, OnGatewayDisconnect {
         secret: process.env.JWT_SECRET || 'change-me',
       });
 
-      // Store user info on the socket for later use
+      // Store user info on the socket for later use.
+      // The active tenant is whichever org this token was issued for.
       client.data.userId = payload.sub;
-      client.data.tenantId = payload.tenantId;
+      client.data.tenantId = payload.activeTenantId;
 
       this.logger.log(
-        `Client connected: ${client.id} (user: ${payload.sub}, tenant: ${payload.tenantId})`,
+        `Client connected: ${client.id} (user: ${payload.sub}, tenant: ${payload.activeTenantId})`,
       );
     } catch (err) {
       this.logger.warn(`Client ${client.id} sent invalid token, disconnecting`);
@@ -105,20 +106,7 @@ export class TodosGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Called by TodosService after every mutation.
    * Only broadcasts to sockets that have joined THIS board within THIS tenant.
    */
-  emitToBoard(boardId: string, event: string, data: any) {
-    // We need to reconstruct the room name, but we don't have tenantId here.
-    // So we embed tenantId in the boardId room lookup using a wildcard approach:
-    // We broadcast to ALL rooms matching *:board:<boardId>.
-    // A cleaner solution: pass tenantId into emitToBoard too.
-    // See emitToBoardForTenant below.
-  }
-
-  emitToBoardForTenant(
-    tenantId: string,
-    boardId: string,
-    event: string,
-    data: any,
-  ) {
+  emitToBoardForTenant(tenantId: string, boardId: string, event: string, data: any) {
     const roomName = `tenant:${tenantId}:board:${boardId}`;
     this.server.to(roomName).emit(event, data);
     this.logger.log(`Emitted "${event}" to room ${roomName}`);

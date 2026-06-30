@@ -4,13 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
   OneToMany,
-  JoinColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { Tenant } from '../../tenants/entities/tenant.entity';
 import { Todo } from '../../todos/entities/todo.entity';
+import { UserTenant } from '../../tenants/entities/user-tenant.entity';
 
 @Entity('users')
 export class User {
@@ -28,14 +26,10 @@ export class User {
   @Column()
   password: string;
 
-  // Every user belongs to exactly one tenant (org).
-  // If you later need users in multiple tenants, you'd add a join table.
-  @Column()
-  tenantId: string;
-
-  @ManyToOne(() => Tenant, (tenant) => tenant.users)
-  @JoinColumn({ name: 'tenantId' })
-  tenant: Tenant;
+  // A user can belong to multiple tenants now. The old single
+  // `tenantId` column is gone — membership lives in UserTenant.
+  @OneToMany(() => UserTenant, (membership) => membership.user)
+  memberships: UserTenant[];
 
   @OneToMany(() => Todo, (todo) => todo.assignee)
   assignedTodos: Todo[];
