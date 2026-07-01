@@ -289,6 +289,35 @@ Real-time events are delivered through Socket.IO.
 
 ---
 
+## Authentication Strategy
+
+Instead of issuing a single JWT that grants access to all of a user's tenants, the application issues a **tenant-specific JWT**.
+
+When a user logs in, they first authenticate with their credentials. If the user belongs to multiple tenants, they must select which tenant they want to access. The backend then generates a JWT containing the selected tenant's identifier.
+
+Each authenticated request therefore carries both the user's identity and the active tenant context.
+
+This approach provides several advantages:
+
+- **Stronger tenant isolation** by ensuring every request is scoped to a single tenant.
+- **Simpler authorization logic**, as the backend always knows which tenant the request belongs to.
+- **Reduced risk of accidental cross-tenant access**, since the token cannot be used to access resources from another tenant.
+- **Smaller and simpler JWT payloads**, avoiding the need to include a list of all tenant memberships.
+
+Switching to another tenant requires requesting a new JWT for the selected tenant, ensuring that every session is explicitly associated with a single organization.
+
+---
+
+## Authentication Trade-off
+
+A possible alternative would have been to issue a single JWT containing all of the user's tenant memberships and allow the frontend to specify the active tenant on each request.
+
+While this approach can reduce the need to obtain a new token when switching tenants, it also increases the complexity of authorization and introduces a greater risk of cross-tenant access if tenant validation is overlooked.
+
+For this assignment, I prioritized security and clarity by using **tenant-specific JWTs**, where each token represents exactly one active tenant.
+
+---
+
 
 # Future Improvements
 
