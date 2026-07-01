@@ -533,6 +533,28 @@ Users cannot join tenants by knowing a slug. This was a deliberate security deci
 **`DELETE /users/:id` removes membership, not the account**
 Since users can belong to multiple tenants, deleting within one org should only remove that membership. Full account deletion happens automatically only if the removed membership was the user's last one.
 
+
+---
+
+
+# Future Improvements
+
+With additional time, the following features would be added:
+
+- Role-based permissions
+- Redis pub/sub for horizontal scaling
+- Drag-and-drop for ToDo cards
+- Email notifications
+- Activity history
+- Better error reporting
+- Integration and end-to-end tests
+- GitHub Actions CI/CD pipeline and deployement
+- User profile page
+- Frontend implementation for Edit/Delete of Boards
+- Frontend Enhancement of Board creation
+- Custom ToDo columns
+- ToDo card tags, color selection, proprity, etc.
+
 ---
 
 # Available Scripts
@@ -576,22 +598,7 @@ While this approach can reduce the need to obtain a new token when switching ten
 
 For this assignment, I prioritized security and clarity by using **tenant-specific JWTs**, where each token represents exactly one active tenant.
 
----
 
-
-# Future Improvements
-
-With additional time, the following features would be added:
-
-- Role-based permissions
-- Redis pub/sub for horizontal scaling
-- Drag-and-drop task ordering
-- File attachments
-- Email notifications
-- Activity history
-- Better error reporting
-- Integration and end-to-end tests
-- GitHub Actions CI/CD pipeline
 
 ---
 
