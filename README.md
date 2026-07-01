@@ -2,7 +2,6 @@
 
 A full-stack multi-tenant collaborative Todo application inspired by Trello. The project demonstrates tenant isolation, authentication, real-time collaboration, and a modern monorepo architecture.
 
-This project was developed as part of a take-home assignment focused on software architecture, code quality, and engineering decisions.
 
 ---
 
